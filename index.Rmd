@@ -1,0 +1,71 @@
+---
+author: "Marc Gumowski"
+categories:
+- JavaScript
+- R language
+d3: yes
+layout: bar
+output: 
+  html_document
+css: src/styles.css
+tags:
+- D3
+- Time Series Bar Chart
+---
+
+```{r setup, echo = FALSE, warning = FALSE, error = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Install packages
+list.of.packages <- c("readxl", "RODBC", "magrittr", "plyr", "zoo", "data.table", "extrafont", "maps", "ggplot2", 
+                      "ggrepel", "RColorBrewer", "viridis", "dplyr", "sp", "circlize", "gridSVG", "ggiraph",
+                      "htmlwidgets", "shiny", "knitr", "xtable", "jsonlite")
+new.packages     <- list.of.packages[!(list.of.packages %in% installed.packages()[ ,"Package"])]
+if(length(new.packages)) {
+  install.packages(new.packages)
+}
+
+# Load packages
+invisible(lapply(list.of.packages, library, character.only = TRUE))
+# invisible(extrafont::loadfonts(device="win"))
+
+# Load data
+dbdata <- data.table(read_xlsx("data.xlsx"))
+
+# Create bins
+dbdata$bin <- ifelse(dbdata$tariffs == 0, "Duty Free",
+                     ifelse(dbdata$tariffs > 0 & dbdata$tariffs < 5, "0 < 5",
+                            ifelse(dbdata$tariffs >= 5 & dbdata$tariffs < 10, "5 < 10",
+                                   ifelse(dbdata$tariffs >= 10 & dbdata$tariffs < 15, "10 < 15",
+                                          ifelse(dbdata$tariffs >= 15 & dbdata$tariffs < 25, "15 < 25",
+                                                 "25 < 50")))))
+dbdata$bin <- as.factor(dbdata$bin)
+# dbdata$bin <- factor(dbdata$bin, levels(dbdata$bin)[c(6, 1, 5, 2:4)])
+dbdata$bin <- factor(dbdata$bin, levels(dbdata$bin)[c(4:2, 5, 1, 6)])
+
+# Edit: Add 0 value for the last bin
+dbplot <- dbdata[ , list(count = .N), by = list(year = year, bin)]
+dbplot <- rbind(dbplot, data.table(year = 2015, bin = "25 < 50", count = 0))
+
+# Ordering by level
+dbplot <- as.list(dbplot[order(-bin, year)])
+```
+
+<head><title> Time Series Bar Chart </title></head>
+<body>
+<center><h1>Range of tariffs applied by WTO members</h1></center>
+<div id="timeSeriesBarInteractive" style="text-align:center; width:100%;"></div>
+```{r echo = FALSE, results = 'asis'}
+# Data, d3, Chart
+cat(
+  paste(
+    '<script>
+    var tsbar = ', toJSON(dbplot, pretty = T), ';
+  </script>'
+  , sep=""),
+'<script src="src/d3v4/d3.min.js"></script>
+<script src="src/timeSeriesBarInteractive.js"></script>
+# ')
+
+```
+<p> Note: years 2006 and 2015, or closest available year with data </p>
+</body></html>
