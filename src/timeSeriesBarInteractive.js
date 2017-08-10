@@ -98,7 +98,9 @@ var rectBar = seriesTSBar.selectAll("rectBar")
     .on('click', function(d) {
          console.log(d);
       })
-    .on('mouseover', function(d) {      
+    .on('mouseover', function(d) {
+      d3.select(this)
+        .attr("opacity", 0.5);
       div.transition()        
       .duration(0)      
       .style('opacity', 1);
@@ -114,7 +116,10 @@ var rectBar = seriesTSBar.selectAll("rectBar")
       .style('left', (d3.event.pageX- 75) + 'px')  
       .style('top', (d3.event.pageY - 75) + 'px');   
     })  
-    .on('mouseout', function(d) {       
+    .on('mouseout', function(d) {
+      d3.select(this).transition()
+        .duration(250)
+        .attr("opacity", 1);
       div.transition()        
       .duration(500)
       .style('opacity', 0);
@@ -127,7 +132,7 @@ g.append("g")
     .call(customXAxis);
 
 // Starting transition
-rectBar.transition()
+rectBar.transition("starting")
     .delay(function(d, i) { return i * 10; })
     .attr("y", function(d) { return y(d[1]); })
     .attr("height", function(d) { return y(d[0]) - y(d[1]); });
@@ -180,16 +185,16 @@ function changed() {
 function transitionGrouped() {
   y.domain([0, yMax]);
 
-  rectBar.transition()
+  rectBar.transition("grouping")
       .duration(500)
       .delay(function(d, i) { return i * 10; })
       .attr("x", function(d, i) { return x(i) + x.bandwidth() / n * this.parentNode.__data__.key; })
       .attr("width", x.bandwidth() / n)
-    .transition()
+    .transition("grouping")
       .attr("y", function(d) { return y(d[1] - d[0]); })
       .attr("height", function(d) { return y(0) - y(d[1] - d[0]); });
       
-  g.selectAll(".y.axis").transition()
+  g.selectAll(".y.axis").transition("grouping")
       .duration(1000)
       .call(customYAxis);
 }
@@ -197,16 +202,16 @@ function transitionGrouped() {
 function transitionStacked() {
   y.domain([0, y1Max]);
 
-  rectBar.transition()
+  rectBar.transition("stacking")
       .duration(500)
       .delay(function(d, i) { return i * 10; })
       .attr("y", function(d) { return y(d[1]); })
       .attr("height", function(d) { return y(d[0]) - y(d[1]); })
-    .transition()
+    .transition("stacking")
       .attr("x", function(d, i) { return x(i); })
       .attr("width", x.bandwidth());
       
-  g.selectAll(".y.axis").transition()
+  g.selectAll(".y.axis").transition("stacking")
       .duration(1000)
       .call(customYAxis);
 } 
